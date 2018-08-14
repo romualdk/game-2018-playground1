@@ -48,6 +48,16 @@ function resizeCanvas() {
  */
 var tileset = new Image(128, 128);
     tileset.src = "tileset.png";
+    tileset.tileWidth = 16;
+    tileset.tileHeight = 16;
+    tileset.tilesInRow = 8;
+
+function getTilePos(tile) {
+    return [
+        (tile % tileset.tilesInRow) * tileset.tileWidth,
+        Math.floor(tile / tileset.tilesInRow) * tileset.tileHeight
+    ];
+}
 
 /**
  * GAME LOOP
@@ -100,6 +110,9 @@ function resetControls() {
 resetControls();
 
 
+/**
+ * KEYBOARD
+ */
 function keyControl(event, value) {
     switch (event.key) {
         case "Enter": controls.A = value; break;
@@ -142,12 +155,108 @@ function isMobile() {
 /**
  * GAME LOGIC
  */
-var angle = 0;
+
+var player = {
+    x: gamescreen.width / 2,
+    y: gamescreen.height / 2,
+    tile: 2,
+    width: 1,
+    height: 1,
+    speed: 75,
+    vx: 0,
+    vy: 0
+}
+
+var enemies = [];
+var spawnTimer = 0;
+var spawnEvery = 2;
+
+function spawnEnemy() {
+    enemies[enemies.length] = {
+        type: "enemy",
+        x: Math.random() * gamescreen.width,
+        y: Math.random() * gamescreen.height,
+        tile: 41 + Math.random() * 7,
+        width: 1,
+        height: 1,
+        speed: 20 + Math.random() * 20,
+        vx: 0,
+        vy: 0
+    }
+}
+
+spawnEnemy();
+spawnEnemy();
+spawnEnemy();
+spawnEnemy();
+
+function update(dt) {
+    if(controls.UP) {
+        player.vy = -player.speed;
+    }
+    else if(controls.DOWN) {
+        player.vy = player.speed;
+    }
+    else {
+        player.vy = 0;
+    }
+
+    if(controls.LEFT) {
+        player.vx = -player.speed;
+    }
+    else if(controls.RIGHT) {
+        player.vx = player.speed;
+    }
+    else {
+        player.vx = 0;
+    }
+
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+
+    for(var i in enemies) {
+        var dx = player.x - enemies[i].x;
+        var dy = player.y - enemies[i].y;
+        var theta = Math.atan2(dy, dx);
+
+        enemies[i].vx = enemies[i].speed * Math.cos(theta);
+        enemies[i].vy = enemies[i].speed * Math.sin(theta);
+
+        enemies[i].x += enemies[i].vx * dt;
+        enemies[i].y += enemies[i].vy * dt;
+    }
+}
+
+
+function render(dt) {
+    gamectx.clearRect(0, 0, gamescreen.width, gamescreen.height);
+
+    var tilePos = getTilePos(player.tile);
+    gamectx.drawImage(tileset,
+        tilePos[0], tilePos[1], player.width * tileset.tileWidth, player.height * tileset.tileHeight,
+        Math.round(player.x), Math.round(player.y), player.width * tileset.tileWidth, player.height * tileset.tileHeight)
+    
+    for(var i in enemies) {
+        var tilePos = getTilePos(enemies[i].tile);
+        gamectx.drawImage(tileset,
+            tilePos[0], tilePos[1], enemies[i].width * tileset.tileWidth, enemies[i].height * tileset.tileHeight,
+            Math.round(enemies[i].x), Math.round(enemies[i].y), enemies[i].width * tileset.tileWidth, enemies[i].height * tileset.tileHeight)
+
+    }
+
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(gamescreen, 0, 0, gamescreen.width, gamescreen.height, 0,0, canvas.width, canvas.height);
+}
+
+/* var angle = 0;
 var scale = 1;
 var speed = 45;
 
 
+
 function update(dt) {
+
     if(controls.UP) {
         speed += 5;
         resetControls();
@@ -187,4 +296,4 @@ function render(dt) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(gamescreen, 0, 0, gamescreen.width, gamescreen.height, 0,0, canvas.width, canvas.height);
     
-}
+}*/
