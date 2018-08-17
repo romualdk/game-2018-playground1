@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>js13k2018</title>
+    <style>
+    html, body {
+        background-color: #f7f7f7;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        border: 0;
+        overflow: hidden; /*  Disable scrollbars */
+        display: block;  /* No floating content on sides */
+    }
+
+    canvas {
+            background-color: #f7f7f7;
+            display: block;
+            position: absolute;
+        }
+
+        #sky {
+            left: 10;
+            top: 500;
+        }
+
+
+    </style>
+</head>
+<body>
+<canvas id="screen"></canvas>
+<canvas id="sky"></canvas>
+<canvas id="ground"></canvas>
+<script type="text/javascript">
+
+/**
+ * SCREEN
+ */
+
+var canvas = document.getElementById('screen');
+var ctx = canvas.getContext('2d');
+
+var gamescreen = document.createElement('canvas');
+var gamectx = gamescreen.getContext("2d");
+gamescreen.width = 600;
+gamescreen.height = 240;
+
+var smoothing = 0;
+
+gamectx.mozImageSmoothingEnabled = smoothing;
+gamectx.msImageSmoothingEnabled = smoothing;
+gamectx.webkitImageSmoothingEnabled = smoothing;
+gamectx.imageSmoothingEnabled = smoothing;
+
+window.addEventListener('resize', resizeCanvas, false);
+
+resizeCanvas();
+
+function resizeCanvas() {
+   
+    var hScale = Math.floor(window.innerWidth / gamescreen.width);
+    var vScale = Math.floor(window.innerHeight / gamescreen.height);
+    var scale = hScale < vScale ? hScale : vScale;
+    scale = scale < 1 ? 1 : scale;
+
+    var realWidth = scale * gamescreen.width;
+    var realHeight = scale * gamescreen.height;
+    var left = Math.floor((window.innerWidth - realWidth) / 2);
+    var top = Math.floor((window.innerHeight - realHeight) / 2);
+
+    canvas.style.width = realWidth + "px";
+    canvas.style.height = realHeight + "px";
+    canvas.style.left = left + "px";
+    canvas.style.top = top + "px";
+
+    canvas.width = realWidth;
+    canvas.height = realHeight;
+}
+
+
+/**
+ * Color tables
+ */
+var colorScheme = {};
+
+colorScheme.standard = {
+    colors: [
+        [  0,  0,  0], // black - outline
+        [255,156, 18], // orange - tone
+        [255,255,255], // white - highlight,
+        [250,188, 32], // yellow - ground,
+        [196, 98,  0], // brown - ground marks
+        [ 66,154,215], // blue - sky,
+        [127,213,205], // light-blue - sky anti-aliasing
+        [247,247,247], // gray - clouds
+        [ 53,128,  0], // green - plants / animals
+        [255, 41, 80]  // red - enemies
+    ],
+    groundColor: 3,
+    skyColor: 5,
+    colorMap:{
+        0: 0,
+        127: 1,
+        255: 2
+    },
+    palettes: [
+        [0,1,2], // sprites
+        [5,6,7], // sky / clouds
+        [0,3,4], // ground
+        [0,4,1], // rocks
+        [0,8,3], // plants
+        [0,8,2], // animals
+        [0,9,3]  // read enemies
+    ],
+    // Palette index for each 32x32 px block on tileset
+    palleteMap: [
+        0,0,0,0,
+        0,0,0,0,
+        3,3,4,0,
+        5,6,0,0,
+        1,1,1,2
+    ]
+}
+
+
+colorScheme.grayscale = {
+    colors: [
+        [  0,  0,  0], // black
+        [160,160,160], // gray
+        [247,247,247], // white
+    ],
+    groundColor: 1,
+    skyColor: 2,
+    colorMap:{
+        0: 0,
+        127: 1,
+        255: 2
+    },
+    palettes: [
+        [0,1,2], // sprites
+        [2,2,2], // sky / clouds
+        [0,1,0], // ground
+    ],
+    // Palette index for each 32x32 px block on tileset
+    palleteMap: [
+        0,0,0,0,
+        0,0,0,0,
+        0,0,0,0,
+        0,0,0,0,
+        1,1,1,2
+    ]
+}
+
+var currentColorScheme = colorScheme.standard;
+
+/**
+ * TILESET
+ */
+var chrtable = new Image();
+    chrtable.src = "data:image/png;base64,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";
+
+var tileset = document.createElement('canvas');
+var tilesetCtx = tileset.getContext("2d");
+
+chrtable.onload = function () {
+    colorizeTileset(currentColorScheme);
+    initGround();
+    //initSky();
+    requestAnimationFrame(frame);
+}
+
+function colorizeTileset(scheme) {
+    tilesetCtx.drawImage(chrtable, 0,0);
+    var imageData = tilesetCtx.getImageData(0,0, 128,256);
+    var data = imageData.data;
+
+    for(var y = 0; y < 256; y++)
+    for(var x = 0; x < 128; x++) {
+        var index = (y * 128 + x) * 4;
+        var colorIndex = scheme.colorMap[data[index]];
+        var palMap = Math.floor(y / 32) * 4 + Math.floor(x / 32);
+        var pal = scheme.palleteMap[palMap] ? scheme.palleteMap[palMap] : 0;
+        var color = scheme.colors[scheme.palettes[pal][colorIndex]];
+  
+        data[index] = color[0];
+        data[index + 1] = color[1];
+        data[index + 2] = color[2];
+    }
+
+    tilesetCtx.putImageData(imageData, 0,0);
+}
+
+
+function getTilePos(tile) {
+    return [
+        (tile % 8) * 16,
+        Math.floor(tile / 8) * 16
+    ];
+}
+
+
+/**
+ * Layers
+ */
+
+var ground = document.getElementById('ground');
+    groundCtx = ground.getContext('2d');
+
+function initGround() {
+    ground.halfWidth = Math.ceil(gamescreen.width / 16) * 16;
+    ground.halfHeight = Math.floor(gamescreen.height / 8);
+    ground.width = ground.halfWidth * 2;
+    ground.height = ground.halfHeight * 2;
+
+    var color = currentColorScheme.colors[currentColorScheme.groundColor];
+
+    groundCtx.fillStyle="rgb(" + color[0] + "," + color[1] + "," + color[2] + ")";
+    groundCtx.fillRect(0,0, ground.halfWidth, ground.height);
+
+    var stamps = Math.floor(5 + Math.random() * 3);
+    var pos = getTilePos(70);
+
+    var step = Math.floor(ground.halfWidth / stamps);
+    var devStep = Math.floor(step / 3);
+    var devVert = Math.floor(ground.halfHeight / 4);
+
+    for(var i = 0; i < stamps; i++) {
+        var dx = 10 + i*step + devStep - Math.floor(Math.random()*devStep*2);
+        var dy = Math.floor(ground.height / 2) + devVert - Math.floor(Math.random()*devVert*2);
+        groundCtx.drawImage(tileset, pos[0],pos[1], 32,32, dx, dy, 32,32);
+    }
+
+    groundCtx.drawImage(ground, 0,0, ground.halfWidth,ground.height, ground.halfWidth,0, ground.halfWidth,ground.height);
+
+}
+
+var sky = document.getElementById('sky');
+    skyCtx = ground.getContext('2d');
+
+function initSky() {
+    sky.width = ground.width;
+    sky.height = screen.height - ground.height;
+    
+    var color = currentColorScheme.colors[currentColorScheme.skyColor];
+
+    skyCtx.fillStyle="rgb(" + color[0] + "," + color[1] + "," + color[2] + ")";
+    skyCtx.fillRect(0,0, sky.width, sky.height);
+}
+
+
+/**
+ * GAME LOOP
+ */
+var now,
+    dt       = 0,
+    last     = timestamp(),
+    slow     = 1,
+    step     = 1/60,
+    slowStep = slow * step;
+
+function timestamp() {
+    return window.performance && window.performance.now ? window.performance.now() : new Date().getTime();
+}
+
+function frame() {
+    now = timestamp();
+    dt = dt + Math.min(1, (now - last) / 1000);
+
+    while(dt > slowStep) {
+        dt = dt - slowStep;
+        update(step);
+    }
+
+    render(dt/slow);
+
+    last = now;
+
+    requestAnimationFrame(frame);
+}
+
+
+/**
+ * CONTROLS
+ */
+var controls = {};
+
+function resetControls() {
+    controls.A = false;
+    controls.B = false;
+    controls.UP = false;
+    controls.DOWN = false;
+    controls.LEFT = false;
+    controls.RIGHT = false;
+}
+
+resetControls();
+
+
+/**
+ * KEYBOARD
+ */
+function keyControl(event, value) {
+    switch (event.key) {
+        case "Enter": controls.A = value; break;
+        case "Shift": controls.B = value; break;
+        case "Z": controls.A = value; break;
+        case "X": controls.B = value; break;
+        case "ArrowLeft": controls.LEFT = value; break;
+        case "ArrowUp": controls.UP = value; break;
+        case "ArrowRight": controls.RIGHT = value; break;
+        case "ArrowDown": controls.DOWN = value; break;
+    }
+}
+
+window.addEventListener("keydown", function (event) { keyControl(event, true); }, false);
+window.addEventListener("keyup", function (event) { keyControl(event, null); }, false);
+
+
+/**
+ * MISC
+ */
+function isMobile() { 
+    if( navigator.userAgent.match(/Android/i)
+    || navigator.userAgent.match(/webOS/i)
+    || navigator.userAgent.match(/iPhone/i)
+    || navigator.userAgent.match(/iPad/i)
+    || navigator.userAgent.match(/iPod/i)
+    || navigator.userAgent.match(/BlackBerry/i)
+    || navigator.userAgent.match(/Windows Phone/i)
+    ){
+       return true;
+     }
+    else {
+       return false;
+     }
+   }
+
+
+
+
+/**
+ * GAME LOGIC
+ */
+
+var player = {
+    x: gamescreen.width / 2,
+    y: gamescreen.height / 2,
+    tile: 2,
+    width: 1,
+    height: 1,
+    speed: 75,
+    vx: 0,
+    vy: 0
+}
+
+var enemies = [];
+var spawnTimer = 0;
+var spawnEvery = 2;
+
+
+function update(dt) {
+   
+}
+
+
+function render(dt) {
+    gamectx.clearRect(0, 0, gamescreen.width, gamescreen.height);
+
+
+    gamectx.drawImage(tileset, 0,0);
+
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(gamescreen, 0, 0, gamescreen.width, gamescreen.height, 0,0, canvas.width, canvas.height);
+}
+
+
+</script>
+</body>
+</html>

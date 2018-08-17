@@ -52,6 +52,54 @@ var tileset = new Image(128, 128);
     tileset.tileHeight = 16;
     tileset.tilesInRow = 8;
 
+var colors = [
+    [  0,  0,  0,   0], // transparent
+    [  0,  0,  0, 255], // black - outline
+    [255,156, 18, 255], // orange - tone
+    [255,255,255, 255], // white - highlight,
+    [250,188, 32, 255], // yellow - ground,
+    [196, 98,  0, 255], // brown - ground marks
+    [ 66,154,215, 255], // blue - sky,
+    [255,156, 18, 255], // light-blue - sky anti-aliasing
+    [247,247,247, 255]  // gray - clouds
+];
+
+var palettes = [
+    [0,1,2,3], // sprites
+    [0,6,7,8], // sky / clouds
+    [0,0,4,5], // ground
+];
+
+var palleteMap = [
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0,
+    1,1,1,3
+];
+
+var palleteMapWidth = 32;
+var palleteMapHeight = 32;
+
+var tilesetColored = document.createElement('canvas');
+var gamectx = gamescreen.getContext("2d");
+gamescreen.width = 240;
+gamescreen.height = 240;
+
+tileset.onload = function () {
+    requestAnimationFrame(frame);
+}
+
+
+var gameWidth = 600;
+var gameHeight = 200;
+
+var groundHeight = Math.floor(gameHeight / 4);
+var groundWidth = Math.ceil(gameWidth / tileset.tileWidth) * tileset.tileWidth;
+
+console.log(groundWidth, 'x', groundHeight);
+
+
 function getTilePos(tile) {
     return [
         (tile % tileset.tilesInRow) * tileset.tileWidth,
@@ -89,9 +137,6 @@ function frame() {
     requestAnimationFrame(frame);
 }
 
-tileset.onload = function () {
-    requestAnimationFrame(frame);
-}
 
 /**
  * CONTROLS
@@ -234,13 +279,13 @@ function render(dt) {
     var tilePos = getTilePos(player.tile);
     gamectx.drawImage(tileset,
         tilePos[0], tilePos[1], player.width * tileset.tileWidth, player.height * tileset.tileHeight,
-        Math.round(player.x), Math.round(player.y), player.width * tileset.tileWidth, player.height * tileset.tileHeight)
+        player.x, player.y, player.width * tileset.tileWidth, player.height * tileset.tileHeight)
     
     for(var i in enemies) {
         var tilePos = getTilePos(enemies[i].tile);
         gamectx.drawImage(tileset,
             tilePos[0], tilePos[1], enemies[i].width * tileset.tileWidth, enemies[i].height * tileset.tileHeight,
-            Math.round(enemies[i].x), Math.round(enemies[i].y), enemies[i].width * tileset.tileWidth, enemies[i].height * tileset.tileHeight)
+            enemies[i].x, enemies[i].y, enemies[i].width * tileset.tileWidth, enemies[i].height * tileset.tileHeight)
 
     }
 
