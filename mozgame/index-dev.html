@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>js13k2018</title>
+    <title>JS13K_2018_OFFLINE</title>
     <style>
     html, body {
         background-color: #f7f7f7;
@@ -17,7 +17,7 @@
 
     canvas {
         display: block;
-        margin: 0px auto;
+        margin: 32px auto;
         border: 1px solid black;
     }
 
@@ -29,6 +29,30 @@
         display: none;
     }
 
+    #info {
+        width: 420px;
+        margin: 0 auto;
+    }
+
+    .i1 {
+        color: #555;
+        font-size: 24px;
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 64px 0 16px 0;
+    }
+
+    .i2 {
+        color: #555;
+        font-size: 14px;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .i3 {
+        color: #bbb;
+        font-size: 14px;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
 
     </style>
 </head>
@@ -37,6 +61,11 @@
 <canvas id="tileset"></canvas>
 <canvas id="sky"></canvas>
 <canvas id="ground"></canvas>
+<div id="info">
+<p class="i1">Unable to connect to the Internet</p>
+<p class="i2">Browser can't display webpage because your computer is not connected to the internet.</p>
+<p class="i3">ERR_JS13K_2018_OFFLINE</p>
+</div>
 <script type="text/javascript" src="dev.js"></script>
 </body>
 </html>
