@@ -520,8 +520,7 @@ document.addEventListener('touchstart', function(event) {
         }
     }
     else {
-        resetGame();
-        sound.powerup.play();
+        startGame();
     }
 });
 
@@ -537,12 +536,7 @@ document.addEventListener('click', function(event) {
         }
     }
     else {
-        resetGame();
-        currentColorScheme = 'standard';
-        colorizeTileset();
-        initGround();
-        initSky();
-        sound.powerup.play();
+        startGame();
     }
 });
 
@@ -561,25 +555,16 @@ document.addEventListener('keypress', function(event) {
         // C - switch color
         if(event.key == 'c' && currentColorScheme == 'standard') {
             currentColorScheme = 'grayscale';
-            colorizeTileset();
-            initGround();
-            initSky();
+            resetGameColors();
         }
         else if(event.key == 'c' && currentColorScheme == 'grayscale') {
             currentColorScheme = 'standard';
-            colorizeTileset();
-            initGround();
-            initSky();
+            resetGameColors();
         }
     }
     else {
         if(event.key == 'z' || event.key == 'x') {
-            resetGame();
-            currentColorScheme = 'standard';
-            colorizeTileset();
-            initGround();
-            initSky();
-            sound.powerup.play();
+            startGame();
         }
     }
     
@@ -657,16 +642,16 @@ var highScore = 0;
 
 
 chrtable.onload = function() {
+    resetGameColors();
+    resetGame();
+    isDead = true;
+    requestAnimationFrame(frame);
+}
+
+function resetGameColors() {
     colorizeTileset();
     initGround();
     initSky();
-    //initPlayer();
-
-    resetGame();
-
-    isDead = true;
-
-    requestAnimationFrame(frame);
 }
 
 function resetGame() {
@@ -677,6 +662,13 @@ function resetGame() {
     points = 0;
     initPlayer();
     isDead = false;
+}
+
+function startGame() {
+    currentColorScheme = 'standard';
+    resetGameColors();
+    resetGame();
+    sound.powerup.play();
 }
 
 
