@@ -511,7 +511,7 @@ document.addEventListener('touchstart', function(event) {
         var touches = event.changedTouches;
 
         // left half of the window click
-        if(touches[0].pagetX < window.innerWidth / 2 && !player.jumping) {
+        if(touches[0].pageX < window.innerWidth / 2 && !player.jumping) {
             player.jump();
         }
         // right half of the window click
